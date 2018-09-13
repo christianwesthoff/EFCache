@@ -20,7 +20,24 @@ namespace EFCache
         {
             if (source == null)
             {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            var objectQuery = TryGetObjectQuery(source) ?? source as ObjectQuery;
+
+            if (objectQuery != null)
+            {
+                BlacklistedQueriesRegistrar.Instance.AddBlacklistedQuery(
+                    objectQuery.Context.MetadataWorkspace, objectQuery.ToTraceString());
+            }
+
+            return source;
+        }
+        public static IQueryable NotCached(this IQueryable source)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
             }
 
             var objectQuery = TryGetObjectQuery(source) ?? source as ObjectQuery;
@@ -45,7 +62,7 @@ namespace EFCache
         {
             if (source == null)
             {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(source));
             }
 
             var objectQuery = TryGetObjectQuery(source) ?? source as ObjectQuery;
@@ -59,25 +76,52 @@ namespace EFCache
             return source;
         }
 
-        private static ObjectQuery TryGetObjectQuery<T>(IQueryable<T> source)
+        public static IQueryable Cached(this IQueryable source)
         {
-            var dbQuery = source as DbQuery<T>;
-
-            if (dbQuery != null)
+            if (source == null)
             {
-                const BindingFlags privateFieldFlags = 
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public;
-
-                var internalQuery =
-                    source.GetType().GetProperty("InternalQuery", privateFieldFlags)
-                        .GetValue(source, null);
-
-                return
-                    (ObjectQuery)internalQuery.GetType().GetProperty("ObjectQuery", privateFieldFlags)
-                        .GetValue(internalQuery, null);
+                throw new ArgumentNullException(nameof(source));
             }
 
-            return null;
+            var objectQuery = TryGetObjectQuery(source) ?? source as ObjectQuery;
+
+            if (objectQuery != null)
+            {
+                AlwaysCachedQueriesRegistrar.Instance.AddCachedQuery(
+                    objectQuery.Context.MetadataWorkspace, objectQuery.ToTraceString());
+            }
+            else
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                objectQuery.MergeOption = MergeOption.NoTracking;
+            }
+
+            return source;
+        }
+
+        private const BindingFlags PrivateMembersFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public;
+        private static ObjectQuery TryGetObjectQuery(IQueryable source)
+        {
+            var query = source.Provider.CreateQuery(source.Expression);
+            if (query is ObjectQuery originalObjectQuery)
+                return originalObjectQuery;
+
+            var queryType = query.GetType();
+            var internalQueryDelegate = queryType.GetPropertyGetterDelegateFromCache("InternalQuery", PrivateMembersFlags);
+            var internalQuery = internalQueryDelegate(query);
+            if (internalQuery == null)
+            {
+                throw new NotSupportedException("Failed to get InternalQuery.");
+            }
+
+            var internalQueryType = internalQuery.GetType();
+            var objectQueryDelegate = internalQueryType.GetPropertyGetterDelegateFromCache("ObjectQuery", PrivateMembersFlags);
+            var objectQuery = objectQueryDelegate(internalQuery) as ObjectQuery;
+            if (objectQuery == null)
+            {
+                throw new NotSupportedException("Failed to get ObjectQuery.");
+            }
+            return objectQuery;
         }
     }
 }

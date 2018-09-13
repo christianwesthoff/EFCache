@@ -16,12 +16,12 @@ namespace EFCache
         {
             if (workspace == null)
             {
-                throw new ArgumentNullException("workspace");
+                throw new ArgumentNullException(nameof(workspace));
             }
 
             if (string.IsNullOrWhiteSpace(sql))
             {
-                throw new ArgumentNullException("sql");
+                throw new ArgumentNullException(nameof(sql));
             }
 
             var queries = _queries.GetOrAdd(workspace, new HashSet<string>());
@@ -35,16 +35,15 @@ namespace EFCache
         {
             if (workspace == null)
             {
-                throw new ArgumentNullException("workspace");
+                throw new ArgumentNullException(nameof(workspace));
             }
 
             if (string.IsNullOrWhiteSpace(sql))
             {
-                throw new ArgumentNullException("sql");
+                throw new ArgumentNullException(nameof(sql));
             }
 
-            HashSet<string> queries;
-            if (_queries.TryGetValue(workspace, out queries))
+            if (_queries.TryGetValue(workspace, out var queries))
             {
                 lock (queries)
                 {
@@ -59,20 +58,19 @@ namespace EFCache
         {
             if (workspace == null)
             {
-                throw new ArgumentNullException("workspace");
+                throw new ArgumentNullException(nameof(workspace));
             }
 
             if (string.IsNullOrWhiteSpace(sql))
             {
-                throw new ArgumentNullException("sql");
+                throw new ArgumentNullException(nameof(sql));
             }
 
-            HashSet<string> queries;
-            if (_queries.TryGetValue(workspace, out queries))
+            if (_queries.TryGetValue(workspace, out var queries))
             {
                 lock (queries)
                 {
-                    return queries.Contains(sql);
+                    return queries.Contains($"{HashingUtils.ComputeHash(sql):X}");
                 }
             }
 

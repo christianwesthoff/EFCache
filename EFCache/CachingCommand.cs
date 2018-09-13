@@ -210,7 +210,7 @@ namespace EFCache
         }
 
 #if !NET40
-        protected async override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+        protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
         {
             if (!IsCacheable)
             {
@@ -363,7 +363,7 @@ namespace EFCache
         }
 
 #if !NET40
-        public async override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
+        public override async Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
         {
             if (!IsCacheable)
             {
@@ -415,17 +415,15 @@ namespace EFCache
             }
         }
 
-        private string CreateKey()
+        private string FormatQuery()
         {
             return
-                string.Format(
-                "{0}_{1}_{2}",
-                Connection.Database,
-                CommandText,
-                string.Join(
-                    "_",
-                    Parameters.Cast<DbParameter>()
-                    .Select(p => string.Format("{0}={1}", p.ParameterName, p.Value))));
+                $"{Connection.Database}_{CommandText}_{string.Join("_", Parameters.Cast<DbParameter>().Select(p => $"{p.ParameterName}={p.Value}"))}";
+        }
+
+        private string CreateKey()
+        {
+            return $"{HashingUtils.ComputeHash(FormatQuery()):X}";
         }
 
         public object Clone()

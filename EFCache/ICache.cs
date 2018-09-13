@@ -41,5 +41,10 @@ namespace EFCache
         /// </summary>
         /// <param name="key">The cache key.</param>
         void InvalidateItem(string key);
+
+        /// <summary>
+        /// Cleans the cache
+        /// </summary>
+        void Clear();
     }
 }

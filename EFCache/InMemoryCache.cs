@@ -15,7 +15,7 @@ namespace EFCache
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             value = null;
@@ -24,8 +24,7 @@ namespace EFCache
             {
                 var now = DateTimeOffset.Now;
 
-                CacheEntry entry;
-                if (_cache.TryGetValue(key, out entry))
+                if (_cache.TryGetValue(key, out var entry))
                 {
                     if(EntryExpired(entry, now))
                     {
@@ -47,12 +46,12 @@ namespace EFCache
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             if (dependentEntitySets == null)
             {
-                throw new ArgumentNullException("dependentEntitySets");
+                throw new ArgumentNullException(nameof(dependentEntitySets));
             }
 
             lock (_cache)
@@ -80,7 +79,7 @@ namespace EFCache
         {
             if (entitySets == null)
             {
-                throw new ArgumentNullException("entitySets");
+                throw new ArgumentNullException(nameof(entitySets));
             }
             
             lock (_cache)
@@ -110,27 +109,30 @@ namespace EFCache
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             lock (_cache)
             {
-                CacheEntry entry;
-
-                if (_cache.TryGetValue(key, out entry))
+                if (_cache.TryGetValue(key, out var entry))
                 {
                     _cache.Remove(key);
 
                     foreach (var set in entry.EntitySets)
                     {
-                        HashSet<string> keys;
-                        if (_entitySetToKey.TryGetValue(set, out keys))
+                        if (_entitySetToKey.TryGetValue(set, out var keys))
                         {
                             keys.Remove(key);
                         }
                     }
                 }
             }
+        }
+
+        public void Clear()
+        {
+            _entitySetToKey.Clear();
+            _cache.Clear();
         }
 
         public void Purge()

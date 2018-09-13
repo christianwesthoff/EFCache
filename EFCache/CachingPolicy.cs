@@ -25,9 +25,9 @@ namespace EFCache
 
         /// <summary>
         /// Initializes a new instance of the <code>CachingPolicy</code> class that allows caching only results for queries
-        /// coming from store entity sets (tables) specified in <paramref name="cachedEntitySets"/>
+        /// coming from store entity sets (tables) specified in <paramref name="cachedTables"/>
         /// </summary>
-        /// <param name="cachedEntitySets">
+        /// <param name="cachedTables">
         /// Names of store entity sets (tables) for which results will be cached.
         /// </param>
         public CachingPolicy(IEnumerable<string> cachedTables)

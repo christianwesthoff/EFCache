@@ -91,7 +91,7 @@ namespace EFCache
 
         public override decimal GetDecimal(int ordinal)
         {
-            return (decimal)GetValue(ordinal);
+            return (decimal)GetValue(ordinal, typeof(decimal));
         }
 
         public override double GetDouble(int ordinal)
@@ -116,17 +116,17 @@ namespace EFCache
 
         public override Guid GetGuid(int ordinal)
         {
-            return (Guid)GetValue(ordinal);
+            return (Guid)GetValue(ordinal, typeof(Guid));
         }
 
         public override short GetInt16(int ordinal)
         {
-            return (short)GetValue(ordinal);
+            return (short)GetValue(ordinal, typeof(short));
         }
 
         public override int GetInt32(int ordinal)
         {
-            return (int)GetValue(ordinal);
+            return (int)GetValue(ordinal, typeof(int));
         }
 
         public override long GetInt64(int ordinal)
@@ -265,6 +265,34 @@ namespace EFCache
             _resultRowsEnumerator.Dispose();
 
             _state = State.Disposed;
+        }
+
+        public object GetValue(int ordinal, Type type)
+        {
+            return ConvertWeaklyTypedValue(GetValue(ordinal), type);
+        }
+
+        // If JsonNet is used for serialization following types are unfortunatly not strongly typed unserialized
+        // see https://github.com/dotnet/orleans/issues/1269
+        private static object ConvertWeaklyTypedValue(object value, Type targetType)
+        {
+            if (targetType == typeof(Guid) && !(value is Guid))
+            {
+                return Guid.Parse((string)value);
+            }
+            if (targetType == typeof(int) && !(value is int))
+            {
+                return Convert.ToInt32(value);
+            }
+            if (targetType == typeof(short) && !(value is short))
+            {
+                return Convert.ToInt16(value);
+            }
+            if (targetType == typeof(decimal) && !(value is decimal))
+            {
+                return Convert.ToDecimal(value);
+            }
+            return value;
         }
     }
 }

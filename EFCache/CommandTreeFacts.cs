@@ -75,7 +75,7 @@ namespace EFCache
                 AffectedEntitySets = new ReadOnlyCollection<EntitySetBase>(visitor.EntitySets);
                 UsesNonDeterministicFunctions =
                     visitor.Functions.Any(f => NonDeterministicFunctions.Contains(
-                            string.Format("{0}.{1}", f.NamespaceName, f.Name)));
+                        $"{f.NamespaceName}.{f.Name}"));
             }
 
             MetadataWorkspace = commandTree.MetadataWorkspace;
